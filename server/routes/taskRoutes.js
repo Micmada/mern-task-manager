@@ -4,10 +4,12 @@ const router = express.Router();
 
 // Create a task
 router.post("/tasks", async (req, res) => {
-  const task = new Task(req.body);
-  await task.save();
-  res.send(task);
-});
+    const { title, dueDate, priority } = req.body;
+    const task = new Task({ title, dueDate, priority });
+    await task.save();
+    res.send(task);
+  });
+  
 
 // Get all tasks
 router.get("/tasks", async (req, res) => {
@@ -16,10 +18,20 @@ router.get("/tasks", async (req, res) => {
 });
 
 // Update a task
-router.put("/tasks/:id", async (req, res) => {
-  const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.send(task);
-});
+router.put("/tasks/:id/toggle", async (req, res) => {
+    try {
+      const task = await Task.findById(req.params.id);
+      if (!task) return res.status(404).send({ message: "Task not found" });
+  
+      task.completed = !task.completed; // Toggle completed status
+      await task.save();
+  
+      res.send(task);
+    } catch (error) {
+      res.status(500).send({ message: "Error updating task" });
+    }
+  });
+  
 
 // Delete a task
 router.delete("/tasks/:id", async (req, res) => {
