@@ -2,11 +2,22 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./App.css";
 
+const options = {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+};
+
+
 const App = () => {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState({ title: "", dueDate: "", priority: "Medium" });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [filterStatus, setFilterStatus] = useState("uncompleted");
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [sortBy, setSortBy] = useState("createdAt");
 
   useEffect(() => {
     fetchTasks();
@@ -54,6 +65,31 @@ const App = () => {
       .catch(() => setMessage("Error deleting task"));
   };
 
+
+
+const filteredTasks = tasks
+  .filter(task => 
+    filterStatus === "all" || 
+    (filterStatus === "completed" && task.completed) || 
+    (filterStatus === "uncompleted" && !task.completed)
+  )
+  .filter(task => 
+    filterPriority === "all" || task.priority === filterPriority
+  )
+  .sort((a, b) => {
+    if (sortBy === "dueDate") {
+      return new Date(a.dueDate) - new Date(b.dueDate);
+    } else if (sortBy === "priority") {
+      const priorityOrder = { High: 1, Medium: 2, Low: 3 };
+      if (priorityOrder[a.priority] === priorityOrder[b.priority]) {
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      }
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    }
+    return new Date(a.createdAt) - new Date(b.createdAt);
+  });
+
+
   return (
     <div className="container">
       <h1>Task Manager</h1>
@@ -81,31 +117,50 @@ const App = () => {
 
       {loading ? <p>Loading...</p> : null}
 
-      <ul>
-  {tasks.map((task) => (
-    <li 
-      key={task._id} 
-      className={`${task.completed ? "completed" : ""} ${
-        task.priority === "High" ? "high-priority" :
-        task.priority === "Medium" ? "medium-priority" : 
-        "low-priority"
-      }`}
-    >
-      <div>
-        <strong>{task.title}</strong> <br />
-        Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date"} <br />
-        Priority: <span style={{ color: task.priority === "High" ? "red" : task.priority === "Medium" ? "orange" : "green" }}>
-          {task.priority}
-        </span>
-      </div>
-      <button className="complete-btn" onClick={() => toggleComplete(task._id)}>
-        {task.completed ? "Undo" : "Complete"}
-      </button>
-      <button className="delete-btn" onClick={() => deleteTask(task._id)}>Delete</button>
-    </li>
-  ))}
-</ul>
+      <div className="filters">
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <option value="uncompleted">Incomplete</option>
+          <option value="completed">Completed</option>
+          <option value="all">All Tasks</option>
+        </select>
 
+        <select onChange={(e) => setFilterPriority(e.target.value)}>
+          <option value="all">All Priorities</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+
+        <select onChange={(e) => setSortBy(e.target.value)}>
+          <option value="createdAt">Sort by Creation First</option>
+          <option value="dueDate">Sort by Due First</option>
+          <option value="priority">Sort by Highest Priority</option>
+        </select>
+      </div>
+      <ul>
+        {filteredTasks.map((task) => (
+          <li key={task._id} className={`${task.completed ? "completed" : ""} ${
+              task.priority === "High" ? "high-priority" :
+              task.priority === "Medium" ? "medium-priority" : 
+              "low-priority"
+            }`}>
+
+            
+            <div>
+            <strong>{task.title}</strong> <br />
+            Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB', options) : "No due date"} <br />
+            Priority: <span style={{ color: task.priority === "High" ? "red" : task.priority === "Medium" ? "orange" : "green" }}>
+                {task.priority}
+              </span>
+              </div>
+              <button className="complete-btn" onClick={() => toggleComplete(task._id)}>
+                {task.completed ? "Undo" : "Complete"}
+              </button>
+              <button className="delete-btn" onClick={() => deleteTask(task._id)}>Delete</button>
+            
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

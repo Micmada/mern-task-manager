@@ -23,7 +23,7 @@ router.put("/tasks/:id/toggle", async (req, res) => {
       const task = await Task.findById(req.params.id);
       if (!task) return res.status(404).send({ message: "Task not found" });
   
-      task.completed = !task.completed; // Toggle completed status
+      task.completed = !task.completed; 
       await task.save();
   
       res.send(task);
