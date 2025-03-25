@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
+import DatePicker from "react-datepicker";
 import axios from "axios";
 import "./App.css";
+import "react-datepicker/dist/react-datepicker.css";
+import Select from "react-select";
+
 
 const options = {
   weekday: "long",
@@ -8,7 +12,6 @@ const options = {
   month: "long",
   day: "numeric",
 };
-
 
 const App = () => {
   const [tasks, setTasks] = useState([]);
@@ -18,11 +21,32 @@ const App = () => {
   const [filterStatus, setFilterStatus] = useState("uncompleted");
   const [filterPriority, setFilterPriority] = useState("all");
   const [sortBy, setSortBy] = useState("createdAt");
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
 
   useEffect(() => {
     fetchTasks();
   }, []);
 
+  useEffect(() => {
+    if (message) {
+      const fadeTimer = setTimeout(() => {
+        const messageElement = document.querySelector(".fade-message");
+        if (messageElement) {
+          messageElement.classList.add("fade-out");
+        }
+      }, 8000); // Start fading at 8 seconds
+  
+      const clearTimer = setTimeout(() => {
+        setMessage("");
+      }, 10000); // Remove message after 10 seconds
+  
+      return () => {
+        clearTimeout(fadeTimer);
+        clearTimeout(clearTimer);
+      };
+    }
+  }, [message]);
+  
   const fetchTasks = () => {
     setLoading(true);
     axios.get("http://localhost:5000/api/tasks")
@@ -36,15 +60,23 @@ const App = () => {
       setMessage("Task cannot be empty!");
       return;
     }
-
+  
+    const today = new Date().toISOString().split("T")[0];
+    if (newTask.dueDate && newTask.dueDate < today) {
+      setMessage("Due date cannot be in the past!");
+      return;
+    }
+  
     axios.post("http://localhost:5000/api/tasks", newTask)
       .then((res) => {
         setTasks([...tasks, res.data]);
         setNewTask({ title: "", dueDate: "", priority: "Medium" });
         setMessage("Task added successfully!");
+        setIsModalOpen(false);
       })
       .catch(() => setMessage("Error adding task"));
   };
+  
 
   const toggleComplete = (id) => {
     axios.put(`http://localhost:5000/api/tasks/${id}/toggle`)
@@ -65,78 +97,95 @@ const App = () => {
       .catch(() => setMessage("Error deleting task"));
   };
 
-
-
-const filteredTasks = tasks
-  .filter(task => 
-    filterStatus === "all" || 
-    (filterStatus === "completed" && task.completed) || 
-    (filterStatus === "uncompleted" && !task.completed)
-  )
-  .filter(task => 
-    filterPriority === "all" || task.priority === filterPriority
-  )
-  .sort((a, b) => {
-    if (sortBy === "dueDate") {
-      return new Date(a.dueDate) - new Date(b.dueDate);
-    } else if (sortBy === "priority") {
-      const priorityOrder = { High: 1, Medium: 2, Low: 3 };
-      if (priorityOrder[a.priority] === priorityOrder[b.priority]) {
+  const filteredTasks = tasks
+    .filter(task => 
+      filterStatus === "all" || 
+      (filterStatus === "completed" && task.completed) || 
+      (filterStatus === "uncompleted" && !task.completed)
+    )
+    .filter(task => 
+      filterPriority === "all" || task.priority === filterPriority
+    )
+    .sort((a, b) => {
+      if (sortBy === "dueDate") {
         return new Date(a.dueDate) - new Date(b.dueDate);
+      } else if (sortBy === "priority") {
+        const priorityOrder = { High: 1, Medium: 2, Low: 3 };
+        if (priorityOrder[a.priority] === priorityOrder[b.priority]) {
+          return new Date(a.dueDate) - new Date(b.dueDate);
+        }
+        return priorityOrder[a.priority] - priorityOrder[b.priority];
       }
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
-    }
-    return new Date(a.createdAt) - new Date(b.createdAt);
-  });
+      return new Date(a.createdAt) - new Date(b.createdAt);
+    });
 
+  const statusOptions = [
+    { value: "uncompleted", label: "Incomplete" },
+    { value: "completed", label: "Completed" },
+    { value: "all", label: "All Tasks" },
+  ];
+
+  const priorityOptions = [
+    { value: "all", label: "All Priorities" },
+    { value: "High", label: "High" },
+    { value: "Medium", label: "Medium" },
+    { value: "Low", label: "Low" },
+  ];
+
+  const newTaskPriorityOptions = [
+    { value: "High", label: "High" },
+    { value: "Medium", label: "Medium" },
+    { value: "Low", label: "Low" },
+  ];
+
+  const sortByOptions = [
+    { value: "createdAt", label: "Sort by Creation First" },
+    { value: "dueDate", label: "Sort by Due First" },
+    { value: "priority", label: "Sort by Highest Priority" },
+  ];
 
   return (
     <div className="container">
       <h1>Task Manager</h1>
-      {message && <p style={{ color: "green" }}>{message}</p>}
+      <div className="message-container">
+        {message && <p className="fade-message">{message}</p>}
+      </div>
 
-      <input
-        value={newTask.title}
-        onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-        placeholder="Enter task..."
-      />
-      <input
-        type="date"
-        value={newTask.dueDate}
-        onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-      />
-      <select
-        value={newTask.priority}
-        onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-      >
-        <option value="Low">Low</option>
-        <option value="Medium">Medium</option>
-        <option value="High">High</option>
-      </select>
-      <button className="add-btn" onClick={addTask}>Add Task</button>
 
-      {loading ? <p>Loading...</p> : null}
+
+      {/* Button to open modal */}
+      <button className="add-btn" onClick={() => setIsModalOpen(true)}>+ Add Task</button>
+
+      {loading && <p>Loading...</p>}
 
       <div className="filters">
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="uncompleted">Incomplete</option>
-          <option value="completed">Completed</option>
-          <option value="all">All Tasks</option>
-        </select>
+      <Select
+          value={statusOptions.find(option => option.value === filterStatus)}
+          onChange={(e) => setFilterStatus(e.value)}
+          options={statusOptions}
+          className="custom-select"
+          classNamePrefix="custom-select"
+        />
 
-        <select onChange={(e) => setFilterPriority(e.target.value)}>
-          <option value="all">All Priorities</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
+<Select
+          value={priorityOptions.find(option => option.value === filterPriority)}
+          onChange={(e) => setFilterPriority(e.value)}
+          options={priorityOptions}
+          className="custom-select"
+          classNamePrefix="custom-select"
+        />
 
-        <select onChange={(e) => setSortBy(e.target.value)}>
-          <option value="createdAt">Sort by Creation First</option>
-          <option value="dueDate">Sort by Due First</option>
-          <option value="priority">Sort by Highest Priority</option>
-        </select>
+<Select
+          value={sortByOptions.find(option => option.value === sortBy)}
+          onChange={(e) => setSortBy(e.value)}
+          options={sortByOptions}
+          className="custom-select"
+          classNamePrefix="custom-select"
+        />
       </div>
+
+      {filteredTasks.length === 0 && <p>No Tasks To Show</p>}
+
       <ul>
         {filteredTasks.map((task) => (
           <li key={task._id} className={`${task.completed ? "completed" : ""} ${
@@ -144,25 +193,61 @@ const filteredTasks = tasks
               task.priority === "Medium" ? "medium-priority" : 
               "low-priority"
             }`}>
-
-            
             <div>
-            <strong>{task.title}</strong> <br />
-            Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB', options) : "No due date"} <br />
-            Priority: <span style={{ color: task.priority === "High" ? "red" : task.priority === "Medium" ? "orange" : "green" }}>
+              <strong>{task.title}</strong> <br />
+              Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB', options) : "No due date"} <br />
+              Priority: <span style={{ color: task.priority === "High" ? "red" : task.priority === "Medium" ? "orange" : "green" }}>
                 {task.priority}
               </span>
-              </div>
-              <button className="complete-btn" onClick={() => toggleComplete(task._id)}>
-                {task.completed ? "Undo" : "Complete"}
-              </button>
-              <button className="delete-btn" onClick={() => deleteTask(task._id)}>Delete</button>
-            
+            </div>
+            <button className="complete-btn" onClick={() => toggleComplete(task._id)}>
+              {task.completed ? "Undo" : "Complete"}
+            </button>
+            <button className="delete-btn" onClick={() => deleteTask(task._id)}>Delete</button>
           </li>
         ))}
       </ul>
+
+      {/* Modal Overlay */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <button className="close-btn" onClick={() => setIsModalOpen(false)}>X</button>
+            <h2>Add Task</h2>
+            <div className="message-container">
+              {message && <p className="fade-message">{message}</p>}
+            </div>
+
+            <input className="modal-input"
+              value={newTask.title}
+              onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+              placeholder="Enter task..."
+            />
+            <div className="test">
+            <DatePicker
+              selected={newTask.dueDate}
+              onChange={(date) => setNewTask({ ...newTask, dueDate: date })}
+              minDate={new Date()} // Prevent past dates
+              dateFormat="dd/MM/yyyy"
+              className="custom-datepicker"
+              placeholderText="Select a due date"
+            />
+            </div>
+            <Select
+              value={newTask.priority}
+              onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+              options={newTaskPriorityOptions}
+              className="custom-select"
+              classNamePrefix="custom-select"
+              placeholder= {<div>Select Priority</div>}
+            />
+            <button className="add-btn" onClick={addTask}>Add Task</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default App;
+
