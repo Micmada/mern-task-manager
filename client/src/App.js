@@ -167,7 +167,7 @@ const App = () => {
           classNamePrefix="custom-select"
         />
 
-<Select
+        <Select
           value={priorityOptions.find(option => option.value === filterPriority)}
           onChange={(e) => setFilterPriority(e.value)}
           options={priorityOptions}
@@ -175,7 +175,7 @@ const App = () => {
           classNamePrefix="custom-select"
         />
 
-<Select
+        <Select
           value={sortByOptions.find(option => option.value === sortBy)}
           onChange={(e) => setSortBy(e.value)}
           options={sortByOptions}
@@ -234,13 +234,14 @@ const App = () => {
             />
             </div>
             <Select
-              value={newTask.priority}
-              onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+              value={newTaskPriorityOptions.find(option => option.value === newTask.priority)}  // Fix value to match the object format
+              onChange={(e) => setNewTask({ ...newTask, priority: e.value })}  // Update the priority with the selected value
               options={newTaskPriorityOptions}
               className="custom-select"
               classNamePrefix="custom-select"
-              placeholder= {<div>Select Priority</div>}
+              placeholder="Select Priority"
             />
+
             <button className="add-btn" onClick={addTask}>Add Task</button>
           </div>
         </div>
