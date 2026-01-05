@@ -1,3 +1,17 @@
+---
+description: Full-stack MERN task manager with CRUD and priority features
+details: >
+  Users can manage tasks with due dates, priorities, and completion status. Features
+  a user-friendly UI with notifications and a color-coded priority system.
+technologies:
+  - react
+  - nodejs
+  - express
+  - mongodb
+hostedUrl: 
+---
+
+
 # MERN Task Manager
 
 ## Overview
