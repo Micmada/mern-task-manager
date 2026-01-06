@@ -1,18 +1,23 @@
 ---
-description: Full-stack MERN task manager with CRUD and priority features
+description: Full-stack MERN task manager with priority levels, due dates, and real-time updates
 details: >
-  Users can manage tasks with due dates, priorities, and completion status. Features
-  a user-friendly UI with notifications and a color-coded priority system.
+  A complete task management application built with the MERN stack featuring
+  full CRUD operations, task completion tracking, and color-coded priority
+  system. Users can create tasks with due dates and priority levels (Low,
+  Medium, High), mark tasks as complete or incomplete, and receive UI
+  notifications for actions. The application uses MongoDB for data persistence,
+  Express.js for REST API endpoints, React for a responsive frontend interface,
+  and Node.js for server-side logic. Features include confirmation prompts for
+  deletions, axios for API communication, and a clean, intuitive user interface
+  with visual priority indicators.
 technologies:
   - react
   - nodejs
   - express
   - mongodb
+  - mern
 hostedUrl: 
 ---
-
-
-
 # MERN Task Manager
 
 ## Overview
